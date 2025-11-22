@@ -1,0 +1,102 @@
+# AutoAdmin Deep Agents Docker Compose Configuration
+# For local development and testing
+
+version: '3.8'
+
+services:
+  # Main agents service
+  autoadmin-agents:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: autoadmin-agents
+    environment:
+      # OpenAI Configuration
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+
+      # Supabase Configuration
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+
+      # GitHub Configuration
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_REPO=${GITHUB_REPO:-autoadmin-app}
+
+      # Tavily Configuration
+      - TAVILY_API_KEY=${TAVILY_API_KEY}
+
+      # System Configuration
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+
+      # Session Management
+      - SESSION_ID=local-dev-session-${TIMESTAMP}
+
+    volumes:
+      # Mount local code for development
+      - ./agents:/app/agents
+      - ./tests:/app/tests
+      # Cache directory for faster builds
+      - agent-cache:/tmp/uv-cache
+
+    ports:
+      # Expose port for potential API server
+      - "8000:8000"
+
+    networks:
+      - autoadmin-network
+
+    restart: unless-stopped
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import agents.main; print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Monitoring service (optional)
+  autoadmin-monitor:
+    image: nginx:alpine
+    container_name: autoadmin-monitor
+    volumes:
+      - ./monitoring/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8080:80"
+    networks:
+      - autoadmin-network
+    depends_on:
+      - autoadmin-agents
+    profiles:
+      - monitoring
+
+  # Development database for testing (optional)
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: autoadmin-postgres-test
+    environment:
+      - POSTGRES_DB=autoadmin_test
+      - POSTGRES_USER=test_user
+      - POSTGRES_PASSWORD=test_password
+    volumes:
+      - postgres-test-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - autoadmin-network
+    profiles:
+      - testing
+
+volumes:
+  agent-cache:
+    driver: local
+  postgres-test-data:
+    driver: local
+
+networks:
+  autoadmin-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

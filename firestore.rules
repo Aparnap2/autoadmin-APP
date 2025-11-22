@@ -1,0 +1,109 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function canAccessTask() {
+      return isAuthenticated() &&
+             (resource.data.user_id == request.auth.uid ||
+              isAdmin() ||
+              request.auth.token.admin == true);
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+
+    // Tasks collection
+    match /tasks/{taskId} {
+      allow read: if canAccessTask();
+      allow write: if canAccessTask();
+      allow create: if isAuthenticated() &&
+                        request.resource.data.user_id == request.auth.uid;
+      allow update: if canAccessTask();
+      allow delete: if canAccessTask() || isAdmin();
+    }
+
+    // Nodes collection (graph memory)
+    match /nodes/{nodeId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() ||
+                      (request.auth.token.agent == true && request.auth.token.permissions.hasAny(['write:memory']));
+      allow create: if isAuthenticated() &&
+                      (request.resource.data.type == 'metric' ||
+                       request.resource.data.type == 'business_rule' ||
+                       isAdmin());
+    }
+
+    // Edges collection (graph relationships)
+    match /edges/{edgeId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() ||
+                      (request.auth.token.agent == true && request.auth.token.permissions.hasAny(['write:memory']));
+    }
+
+    // Agent files collection (virtual filesystem)
+    match /agent_files/{filePath} {
+      allow read, write: if isAdmin() ||
+                          (request.auth.token.agent == true &&
+                           request.auth.token.permissions.hasAny(['read:files', 'write:files']));
+    }
+
+    // Messages collection
+    match /messages/{messageId} {
+      allow read: if isAuthenticated() &&
+                     (resource.data.user_id == request.auth.uid ||
+                      resource.data.agent_id == request.auth.uid ||
+                      isAdmin());
+      allow create: if isAuthenticated() &&
+                      request.resource.data.user_id == request.auth.uid;
+      allow write: if isAdmin();
+    }
+
+    // Agent states collection
+    match /agentStates/{stateId} {
+      allow read: if isAuthenticated() &&
+                     (resource.data.userId == request.auth.uid ||
+                      isAdmin());
+      allow write: if isAuthenticated() &&
+                      resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() &&
+                      request.resource.data.userId == request.auth.uid;
+    }
+
+    // Webhook events collection
+    match /webhook_events/{eventId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+      allow create: if true; // Allow webhooks to create events
+    }
+
+    // System collections (admin only)
+    match /system/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Health collection (for monitoring)
+    match /health/{docId} {
+      allow read, write: if true; // Allow health checks
+    }
+
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,207 @@
+# Netlify configuration for AutoAdmin Expo app
+[build]
+  # Build command for Expo using pnpm
+  command = "pnpm install && pnpm run build"
+  # Directory containing the build output
+  publish = "dist"
+  # Node.js version
+  node_version = "18"
+
+[build.environment]
+  NPM_FLAGS = "--version"
+  PNPM_VERSION = "8"
+  EXPO_CLI_VERSION = "6.0.0"
+  EXPO_USE_FAST_RESOLVER = "1"
+
+[dev]
+  # Local development command using pnpm
+  command = "pnpm start"
+  # Port for the development server
+  port = 8081
+  # Auto-open browser
+  autoLaunch = false
+
+# Serverless functions configuration
+[functions]
+  # Directory containing serverless functions
+  directory = "app/api"
+  # Node.js version for functions
+  node_version = "18"
+
+# Individual function configurations
+[[functions]]
+  path = "app/api/agents/trigger"
+  # Timeout for agent trigger (5 minutes)
+  timeout = 300
+  # Memory allocation
+  memory = 512
+
+[[functions]]
+  path = "app/api/webhooks/handler"
+  # Timeout for webhook handler (30 seconds)
+  timeout = 30
+  # Memory allocation
+  memory = 256
+
+[[functions]]
+  path = "app/api/agents/status"
+  # Timeout for status check (10 seconds)
+  timeout = 10
+  # Memory allocation
+  memory = 128
+
+# Vector search functions
+[[functions]]
+  path = "app/api/vector/search"
+  # Timeout for vector search (30 seconds)
+  timeout = 30
+  # Memory allocation
+  memory = 512
+
+[[functions]]
+  path = "app/api/vector/embeddings"
+  # Timeout for embedding generation (60 seconds)
+  timeout = 60
+  # Memory allocation
+  memory = 512
+
+# Graph operations functions
+[[functions]]
+  path = "app/api/graph/subgraph"
+  # Timeout for subgraph traversal (30 seconds)
+  timeout = 30
+  # Memory allocation
+  memory = 256
+
+[[functions]]
+  path = "app/api/graph/traversal"
+  # Timeout for graph traversal (45 seconds)
+  timeout = 45
+  # Memory allocation
+  memory = 256
+
+# Redirects and rewrites for Expo Router
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers for security and performance
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization, X-Webhook-Signature, X-Webhook-Source, X-GitHub-Event"
+
+# Environment variables (these should be set in Netlify dashboard)
+[context.production.environment]
+  GITHUB_TOKEN = ""
+  GITHUB_REPO_OWNER = ""
+  GITHUB_REPO_NAME = ""
+  WEBHOOK_SECRET = ""
+  EXPO_PUBLIC_FIREBASE_API_KEY = ""
+  EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN = ""
+  EXPO_PUBLIC_FIREBASE_PROJECT_ID = ""
+  EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET = ""
+  EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID = ""
+  EXPO_PUBLIC_FIREBASE_APP_ID = ""
+  EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID = ""
+  # OpenAI API for embeddings
+  OPENAI_API_KEY = ""
+  # Netlify API configuration
+  NETLIFY_API_URL = ""
+
+[context.deploy-preview.environment]
+  GITHUB_TOKEN = ""
+  GITHUB_REPO_OWNER = ""
+  GITHUB_REPO_NAME = ""
+  EXPO_PUBLIC_FIREBASE_API_KEY = ""
+  EXPO_PUBLIC_FIREBASE_PROJECT_ID = ""
+  EXPO_PUBLIC_FIREBASE_APP_ID = ""
+  OPENAI_API_KEY = ""
+
+[context.branch-deploy.environment]
+  GITHUB_TOKEN = ""
+  GITHUB_REPO_OWNER = ""
+  GITHUB_REPO_NAME = ""
+  EXPO_PUBLIC_FIREBASE_API_KEY = ""
+  EXPO_PUBLIC_FIREBASE_PROJECT_ID = ""
+  EXPO_PUBLIC_FIREBASE_APP_ID = ""
+  OPENAI_API_KEY = ""
+
+# Plugin configurations
+[[plugins]]
+  package = "@netlify/plugin-functions-core"
+
+[[plugins]]
+  package = "netlify-plugin-expo"
+
+[plugin.netlify-plugin-expo]
+  # Expo CLI version
+  expoCliVersion = "6.0.0"
+  # Skip prebuild
+  skipPrebuild = true
+  # Expo SDK version
+  expoSdkVersion = "54.0.0"
+
+# Edge functions for better performance (optional)
+[[edge_functions]]
+  path = "/api/webhooks/handler"
+  function = "webhook-handler"
+
+# Form handling (if needed)
+[[redirects]]
+  from = "/success"
+  to = "/index.html?status=success"
+  status = 302
+
+[[redirects]]
+  from = "/error"
+  to = "/index.html?status=error"
+  status = 302
+
+# Static asset caching
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# API rate limiting headers
+[[headers]]
+  for = "/api/agents/trigger"
+  [headers.values]
+    X-RateLimit-Limit = "100"
+    X-RateLimit-Remaining = "99"
+    X-RateLimit-Reset = "3600"
+
+[[headers]]
+  for = "/api/webhooks/handler"
+  [headers.values]
+    X-RateLimit-Limit = "1000"
+    X-RateLimit-Remaining = "999"
+    X-RateLimit-Reset = "3600"

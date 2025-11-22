@@ -1,0 +1,347 @@
+name: AutoAdmin Backend Agent
+
+on:
+  workflow_dispatch:
+    inputs:
+      task_id:
+        description: 'Task ID from frontend'
+        required: true
+        type: string
+      task_type:
+        description: 'Type of task to process'
+        required: true
+        type: choice
+        options:
+          - market_research
+          - financial_analysis
+          - code_analysis
+          - strategic_planning
+      task_data:
+        description: 'Task data (JSON)'
+        required: false
+        type: string
+      priority:
+        description: 'Task priority'
+        required: false
+        type: choice
+        default: 'medium'
+        options:
+          - low
+          - medium
+          - high
+          - urgent
+  repository_dispatch:
+    types: [task_delegation]
+
+  # Also allow triggering from schedule for maintenance
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+
+jobs:
+  process-task:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Cache Python dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      - name: Install Python dependencies
+        run: |
+          cd backend
+          uv sync --dev
+
+      - name: Parse task data
+        id: parse-task
+        run: |
+          # Set default values
+          TASK_ID="${{ github.event.inputs.task_id || github.event.client_payload.task_id || 'auto_'$(date +%s) }}"
+          TASK_TYPE="${{ github.event.inputs.task_type || github.event.client_payload.task_type || 'market_research' }}"
+          TASK_DATA="${{ github.event.inputs.task_data || github.event.client_payload.task_data || '{}' }}"
+          PRIORITY="${{ github.event.inputs.priority || github.event.client_payload.priority || 'medium' }}"
+
+          # Validate JSON if provided
+          if [[ "$TASK_DATA" != "{}" ]]; then
+            if ! echo "$TASK_DATA" | python -m json.tool > /dev/null; then
+              echo "Invalid JSON in task_data"
+              exit 1
+            fi
+          fi
+
+          # Set outputs for next steps
+          echo "task_id=$TASK_ID" >> $GITHUB_OUTPUT
+          echo "task_type=$TASK_TYPE" >> $GITHUB_OUTPUT
+          echo "priority=$PRIORITY" >> $GITHUB_OUTPUT
+          echo "task_data=$TASK_DATA" >> $GITHUB_OUTPUT
+
+          # Log task information
+          echo "Processing task:"
+          echo "  ID: $TASK_ID"
+          echo "  Type: $TASK_TYPE"
+          echo "  Priority: $PRIORITY"
+
+      - name: Set up environment variables
+        run: |
+          # Create .env file for backend
+          cat > backend/.env << EOF
+          # Core Configuration
+          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}
+          TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }}
+
+          # GitHub Configuration
+          GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO=${{ github.repository }}
+
+          # System Configuration
+          LOG_LEVEL=INFO
+          ENVIRONMENT=production
+          SESSION_ID=github_${{ steps.parse-task.outputs.task_id }}
+
+          # Task Configuration
+          TASK_ID=${{ steps.parse-task.outputs.task_id }}
+          TASK_TYPE=${{ steps.parse-task.outputs.task_type }}
+          PRIORITY=${{ steps.parse-task.outputs.priority }}
+          TASK_DATA=${{ steps.parse-task.outputs.task_data }}
+
+          # Agent Configuration
+          MAX_RETRIES=3
+          AGENT_TIMEOUT=300
+          CONCURRENT_AGENTS=5
+
+          # Workflow Configuration
+          WORKFLOW_ID=${{ github.run_id }}
+          RUN_NUMBER=${{ github.run_number }}
+          REPO=${{ github.repository }}
+          COMMIT=${{ github.sha }}
+          EOF
+
+      - name: Start backend processing
+        id: process-task
+        run: |
+          cd backend
+
+          # Run backend with task
+          echo "Starting AutoAdmin backend for task processing..."
+
+          # Create a Python script to process the task
+          cat > process_task.py << 'EOF'
+          import asyncio
+          import json
+          import os
+          import sys
+          from datetime import datetime
+          from main import AutoAdminBackend
+
+          async def main():
+              backend = AutoAdminBackend()
+
+              try:
+                  # Initialize backend
+                  await backend.initialize()
+
+                  # Create task data
+                  task_data = {
+                      "id": os.getenv("TASK_ID"),
+                      "type": "heavy_task",
+                      "category": os.getenv("TASK_TYPE"),
+                      "priority": os.getenv("PRIORITY"),
+                      "title": f"GitHub Actions Task - {os.getenv('TASK_TYPE')}",
+                      "description": f"Task processed via GitHub Actions workflow",
+                      "parameters": json.loads(os.getenv("TASK_DATA", "{}")),
+                      "expectedDuration": 300,
+                      "complexity": 7,
+                      "resourceRequirements": {
+                          "compute": "medium",
+                          "memory": "medium"
+                      },
+                      "metadata": {
+                          "source": "github_actions",
+                          "workflow_id": os.getenv("WORKFLOW_ID"),
+                          "run_number": os.getenv("RUN_NUMBER"),
+                          "repo": os.getenv("REPO"),
+                          "commit": os.getenv("COMMIT"),
+                          "started_at": datetime.now().isoformat()
+                      }
+                  }
+
+                  # Process the task
+                  result = await backend.handle_manual_task(task_data)
+
+                  # Save result to file
+                  with open("../task_result.json", "w") as f:
+                      json.dump(result, f, indent=2)
+
+                  # Exit with appropriate code
+                  if result.get("success", False):
+                      print(f"✅ Task {task_data['id']} completed successfully")
+                      sys.exit(0)
+                  else:
+                      print(f"❌ Task {task_data['id']} failed: {result.get('error', 'Unknown error')}")
+                      sys.exit(1)
+
+              except Exception as e:
+                  error_result = {
+                      "success": False,
+                      "error": str(e),
+                      "timestamp": datetime.now().isoformat()
+                  }
+
+                  with open("../task_result.json", "w") as f:
+                      json.dump(error_result, f, indent=2)
+
+                  print(f"❌ Backend error: {e}")
+                  sys.exit(1)
+
+              finally:
+                  await backend.stop()
+
+          if __name__ == "__main__":
+              asyncio.run(main())
+          EOF
+
+          # Run the processing script
+          python process_task.py
+
+      - name: Upload task result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: task-result-${{ steps.parse-task.outputs.task_id }}
+          path: task_result.json
+          retention-days: 7
+
+      - name: Send result to frontend
+        if: always()
+        run: |
+          # Read result
+          if [[ -f task_result.json ]]; then
+            RESULT=$(cat task_result.json)
+          else
+            RESULT='{"success": false, "error": "No result file found"}'
+          fi
+
+          # Create a webhook payload
+          cat > webhook_payload.json << EOF
+          {
+            "task_id": "${{ steps.parse-task.outputs.task_id }}",
+            "workflow_id": "${{ github.run_id }}",
+            "run_number": "${{ github.run_number }}",
+            "status": "${{ job.status }}",
+            "completed_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "result": $RESULT
+          }
+          EOF
+
+          # Send to Supabase (frontend will read from there)
+          echo "Sending task completion to Supabase..."
+
+          # This would send to a Supabase webhook or edge function
+          # For now, we'll store in the database table
+          curl -X POST "${{ secrets.SUPABASE_URL }}/rest/v1/task_results" \
+            -H "apikey: ${{ secrets.SUPABASE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d @webhook_payload.json || echo "Failed to send to Supabase"
+
+      - name: Send notification
+        if: always()
+        run: |
+          # Prepare notification message
+          TASK_ID="${{ steps.parse-task.outputs.task_id }}"
+          STATUS="${{ job.status }}"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          if [[ "$STATUS" == "success" ]]; then
+            MESSAGE="✅ Task $TASK_ID completed successfully"
+            EMOJI="🎉"
+          else
+            MESSAGE="❌ Task $TASK_ID failed"
+            EMOJI="💥"
+          fi
+
+          # Create summary comment
+          echo "$EMOJI **AutoAdmin Task Completed**
+
+          **Task ID:** $TASK_ID
+          **Status:** $STATUS
+          **Workflow:** [$RUN_URL]($RUN_URL)
+          **Completed:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+
+          ---
+          *Processed by AutoAdmin Backend Agent*" >> $GITHUB_STEP_SUMMARY
+
+          # Send to notification service if configured
+          if [[ -n "${{ secrets.NOTIFICATION_WEBHOOK }}" ]]; then
+            curl -X POST "${{ secrets.NOTIFICATION_WEBHOOK }}" \
+              -H "Content-Type: application/json" \
+              -d "{\"text\": \"$MESSAGE - View details: $RUN_URL\"}"
+          fi
+
+  # Cleanup job to remove old artifacts
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: process-task
+    if: always()
+
+    steps:
+      - name: Cleanup old artifacts
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.runId,
+            });
+
+            // Keep only the latest 10 artifacts for this workflow
+            const allArtifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+
+            const taskArtifacts = allArtifacts.data.artifacts
+              .filter(a => a.name.startsWith('task-result-'))
+              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            // Remove artifacts older than the latest 10
+            const artifactsToRemove = taskArtifacts.slice(10);
+
+            for (const artifact of artifactsToRemove) {
+              console.log(`Removing artifact: ${artifact.name}`);
+              await github.rest.actions.deleteArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: artifact.id,
+              });
+            }
