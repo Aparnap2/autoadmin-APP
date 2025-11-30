@@ -1,4 +1,4 @@
-import { getFirebaseService } from '../../../lib/firebase';
+import { getFirebaseService } from '../../../lib/firebase.ts';
 import { runTask, createApiResponse, getEnvVar } from '../utils/expo-serverless';
 
 interface WebhookEvent {
@@ -139,6 +139,16 @@ export async function POST(request: Request) {
     console.error('Webhook handler error:', error);
     return createApiResponse(false, undefined, 'Internal server error', 500);
   }
+}
+
+/**
+ * Default export for Expo/Next.js API route compatibility
+ * This is needed for proper React component detection
+ */
+export default function handler() {
+  // This is a placeholder export to satisfy Expo/Next.js requirements
+  // The actual API functionality is handled by GET/POST methods
+  return null;
 }
 
 /**

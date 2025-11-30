@@ -195,6 +195,7 @@ dmypy.json
 .firebase/
 firebase-debug.log
 firestore-debug.log
+firebase-credentials.json
 
 # Local development
 .local/
