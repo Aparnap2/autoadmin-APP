@@ -1,0 +1,166 @@
+# Test: Multi-Agent Coordination
+appId: com.autoadmin.app
+
+---
+# Setup
+- runFlow:
+    file: ../utils/helpers.yaml
+    args:
+      message: "Starting Multi-Agent Coordination Test"
+
+- tapOn:
+    text: "Chat"
+    label: "Navigate to Chat tab"
+
+- waitFor:
+    id: "agent-chat-interface"
+    timeout: 10000
+
+---
+# Test 1: Request that needs CEO + Strategy coordination
+- tapOn:
+    id: "chat-input"
+    label: "Focus chat input"
+
+- inputText: "We need to evaluate entering a new market segment. Please provide strategic analysis and operational requirements."
+
+- tapOn:
+    text: "Send"
+    label: "Send coordination request"
+
+# Wait for initial response
+- waitFor:
+    text: "market segment"
+    timeout: 45000
+
+# Assert response includes both strategic and operational insights
+- assertVisible:
+    text: "strategic"
+    regex: true
+
+- assertVisible:
+    text: "operational"
+    regex: true
+
+---
+# Test 2: Switch to DevOps for technical requirements
+- tapOn:
+    id: "agent-selector"
+    label: "Open agent selector"
+
+- tapOn:
+    text: "DevOps"
+    label: "Switch to DevOps Agent"
+
+- tapOn:
+    id: "chat-input"
+    label: "Focus DevOps input"
+
+- inputText: "Based on the market entry discussion, what infrastructure changes are needed?"
+
+- tapOn:
+    text: "Send"
+    label: "Send to DevOps"
+
+- waitFor:
+    text: "infrastructure"
+    timeout: 45000
+
+# Assert technical recommendations
+- assertVisible:
+    text: "deployment"
+    regex: true
+
+- assertVisible:
+    text: "scalability"
+    regex: true
+
+---
+# Test 3: Quick Actions Test - Sequential Agents
+- tapOn:
+    text: "Market Analysis"
+    label: "Tap Market Analysis quick action"
+
+# This should auto-switch to Strategy agent
+- waitFor:
+    text: "Strategy"
+    timeout: 5000
+
+- waitFor:
+    text: "market trends"
+    timeout: 45000
+
+- assertVisible:
+    text: "insights"
+    regex: true
+
+---
+# Test 4: System Health Check with DevOps
+- tapOn:
+    text: "System Health"
+    label: "Tap System Health quick action"
+
+# Verify auto-switch to DevOps
+- waitFor:
+    text: "DevOps"
+    timeout: 5000
+
+- waitFor:
+    text: "system health"
+    timeout: 45000
+
+# Assert system health indicators
+- assertVisible:
+    text: "optimization"
+    regex: true
+
+- assertVisible:
+    text: "performance"
+    regex: true
+
+---
+# Test 5: Performance Metrics with CEO
+- tapOn:
+    text: "Performance Metrics"
+    label: "Tap Performance Metrics quick action"
+
+# Verify auto-switch to CEO
+- waitFor:
+    text: "CEO"
+    timeout: 5000
+
+- waitFor:
+    text: "KPI"
+    regex: true
+    timeout: 45000
+
+# Assert performance data
+- assertVisible:
+    text: "metrics"
+    regex: true
+
+---
+# Test 6: Verify Agent State Persistence
+- scrollUntilVisible:
+    element:
+      text: "Market Analysis"
+    direction: UP
+    timeout: 5000
+
+# Check that all agent interactions are preserved
+- assertVisible:
+    text: "market segment"
+
+- assertVisible:
+    text: "infrastructure"
+
+- assertVisible:
+    text: "system health"
+
+- assertVisible:
+    text: "Performance Metrics"
+
+- runFlow:
+    file: ../../utils/helpers.yaml
+    args:
+      message: "Multi-Agent Coordination Test Completed"

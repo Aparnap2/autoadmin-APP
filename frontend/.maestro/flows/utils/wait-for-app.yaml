@@ -1,0 +1,26 @@
+# Utility: Wait for App Initialization
+appId: com.autoadmin.app
+
+# Wait for app to fully initialize
+- waitFor:
+    id: "app-loaded"
+    timeout: 20000
+
+# Check if Firebase auth is ready
+- extendedWaitUntil:
+    visible:
+      text: "Dashboard"
+    timeout: 15000
+
+# Verify backend connection
+- extendedWaitUntil:
+    visible:
+      text: "Connected"
+      regex: true
+    timeout: 10000
+
+# Ensure agents are initialized
+- extendedWaitUntil:
+    visible:
+      text: "Agents Ready"
+    timeout: 15000

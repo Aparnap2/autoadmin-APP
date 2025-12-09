@@ -1,0 +1,78 @@
+{
+  "configuration_validation": {
+    "status": "warning",
+    "details": [
+      "Configuration valid: False",
+      "Errors found: 3",
+      "Warnings found: 0",
+      "Recommendations: 16",
+      "Error: Missing required environment variable: FIREBASE_PROJECT_ID",
+      "Error: Missing required environment variable: FIREBASE_CLIENT_EMAIL",
+      "Error: Missing required environment variable: FIREBASE_PRIVATE_KEY"
+    ]
+  },
+  "firebase_initialization": {
+    "status": "passed",
+    "details": [
+      "Service mode: recovering",
+      "Is online: False",
+      "Is offline: False",
+      "Configuration valid: False",
+      "Has app: False",
+      "Has database: False",
+      "Retry count: 2"
+    ]
+  },
+  "offline_mode_operations": {
+    "status": "failed",
+    "details": [
+      "Exception: 'NoneType' object has no attribute 'path'"
+    ]
+  },
+  "authentication_retry": {
+    "status": "passed",
+    "details": [
+      "Service is online, retry logic not tested",
+      "Health check completed: offline"
+    ]
+  },
+  "recovery_service": {
+    "status": "passed",
+    "details": [
+      "Recovery service healthy: True",
+      "Circuit state: closed",
+      "Recovery attempt completed: True",
+      "Recovery successful: True"
+    ]
+  },
+  "health_monitoring": {
+    "status": "passed",
+    "details": [
+      "Monitoring configured: True",
+      "Monitoring active: False",
+      "Check interval: 60.0s",
+      "Health check completed: offline",
+      "Services available: 0"
+    ]
+  },
+  "data_integrity": {
+    "status": "warning",
+    "details": [
+      "Total test items created: 5",
+      "Integrity checks passed: 0",
+      "Data integrity percentage: 0.0%",
+      "Sync attempted: True",
+      "Sync successful: False"
+    ]
+  },
+  "error_handling": {
+    "status": "passed",
+    "details": [
+      "Invalid task handled gracefully: True",
+      "Invalid file handled gracefully: True",
+      "Service is online, offline error handling not tested",
+      "Diagnostics generated: True",
+      "Diagnostics has error info: True"
+    ]
+  }
+}

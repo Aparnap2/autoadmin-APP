@@ -1,0 +1,27 @@
+# Common Test Helpers for AutoAdmin
+
+# Helper: Wait for app to load
+- runFlow:
+    file: flows/utils/wait-for-app.yaml
+
+# Helper: Navigate to specific tab
+- runFlow:
+    file: flows/utils/navigate-to-tab.yaml
+    args:
+      tab: ${tab}
+
+# Helper: Check if backend is connected
+- runFlow:
+    file: flows/utils/check-backend-connection.yaml
+
+# Helper: Wait for agent initialization
+- runFlow:
+    file: flows/utils/wait-for-agents.yaml
+
+# Helper: Take screenshot with label
+- takeScreenshot: ${label}
+
+# Helper: Log test step
+- tapOn:
+    text: ".*"  # Dummy tap for logging
+    label: "TEST STEP: ${message}"

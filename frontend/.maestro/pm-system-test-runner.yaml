@@ -1,0 +1,13 @@
+# Next-Gen PM System Test Runner
+# Execute all PM system tests in proper sequence
+
+appId: host.exp.Exponent
+path: exp://10.35.74.244:8081
+
+---
+# Basic App Launch Test
+- launchApp
+- assertVisible: "AutoAdmin"
+- waitForAnimationToEnd
+- takeScreenshot:
+    name: "app-launched-successfully"

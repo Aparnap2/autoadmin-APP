@@ -1,0 +1,370 @@
+# Test: Complete AutoAdmin PRD Workflow
+appId: com.autoadmin.app
+
+---
+# Initial Setup
+- runFlow:
+    file: ../utils/helpers.yaml
+    args:
+      message: "Starting Complete PRD Workflow Test"
+
+# Verify app initialization
+- waitFor:
+    id: "app-initialized"
+    timeout: 15000
+
+---
+# Workflow Step 1: Morning Briefing Generation
+- tapOn:
+    text: "Dashboard"
+    label: "Navigate to Dashboard"
+
+- waitFor:
+    id: "dashboard-container"
+    timeout: 10000
+
+- tapOn:
+    text: "Generate Morning Briefing"
+    label: "Generate morning briefing"
+
+- waitFor:
+    text: "Executive Summary"
+    timeout: 60000
+
+# Assert briefing generated
+- assertVisible:
+    text: "Revenue"
+    regex: true
+
+- assertVisible:
+    text: "Customers"
+    regex: true
+
+- takeScreenshot:
+    label: "morning-briefing-generated"
+
+---
+# Workflow Step 2: CEO Agent Status Request
+- tapOn:
+    text: "Chat"
+    label: "Navigate to Chat"
+
+- waitFor:
+    id: "agent-chat-interface"
+    timeout: 10000
+
+- tapOn:
+    text: "Status Update"
+    label: "Request CEO status update"
+
+- waitFor:
+    text: "operations"
+    timeout: 45000
+
+- assertVisible:
+    text: "strategic priorities"
+    regex: true
+
+- takeScreenshot:
+    label: "ceo-status-received"
+
+---
+# Workflow Step 3: Task Delegation Based on Briefing
+- tapOn:
+    text: "Explore"
+    label: "Navigate to Task Manager"
+
+- waitFor:
+    testID: "task-manager-screen"
+    timeout: 10000
+
+- tapOn:
+    testID: "fab-create-task"
+    label: "Create task from briefing"
+
+# Create task based on morning briefing insights
+- tapOn:
+    id: "task-title-input"
+    label: "Enter task title"
+
+- inputText: "Address Revenue Growth Alert from Morning Briefing"
+
+- tapOn:
+    id: "task-description-input"
+    label: "Enter task description"
+
+- inputText: "Based on morning briefing alert, implement strategies to improve revenue growth rate"
+
+- tapOn:
+    id: "agent-type-selector"
+    label: "Select agent type"
+
+- tapOn:
+    text: "Strategy Agent"
+    label: "Select Strategy Agent"
+
+- tapOn:
+    text: "Create Task"
+    label: "Create strategy task"
+
+- waitFor:
+    text: "Task created successfully"
+    timeout: 15000
+
+- tapOn:
+    text: "OK"
+    label: "Dismiss success"
+
+---
+# Workflow Step 4: Multi-Agent Coordination
+- tapOn:
+    text: "Chat"
+    label: "Back to chat"
+
+- tapOn:
+    id: "chat-input"
+    label: "Focus chat input"
+
+- inputText: "We have a revenue growth alert. CEO, please coordinate with Strategy and Marketing teams to create an action plan."
+
+- tapOn:
+    text: "Send"
+    label: "Send coordination request"
+
+- waitFor:
+    text: "coordination"
+    timeout: 45000
+
+# Assert multi-agent response
+- assertVisible:
+    text: "teams"
+    regex: true
+
+- takeScreenshot:
+    label: "multi-agent-coordination"
+
+---
+# Workflow Step 5: Strategy Agent Input
+- tapOn:
+    id: "agent-selector"
+    label: "Switch agents"
+
+- tapOn:
+    text: "Strategy"
+    label: "Select Strategy Agent"
+
+- tapOn:
+    id: "chat-input"
+    label: "Focus strategy input"
+
+- inputText: "Analyze market opportunities for revenue growth and provide specific recommendations"
+
+- tapOn:
+    text: "Send"
+    label: "Send to Strategy Agent"
+
+- waitFor:
+    text: "market opportunities"
+    timeout: 45000
+
+- assertVisible:
+    text: "recommendations"
+    regex: true
+
+---
+# Workflow Step 6: Marketing Agent Campaign Planning
+- tapOn:
+    id: "agent-selector"
+    label: "Switch agents"
+
+- tapOn:
+    text: "Marketing"
+    label: "Select Marketing Agent"
+
+- tapOn:
+    id: "chat-input"
+    label: "Focus marketing input"
+
+- inputText: "Based on strategy recommendations, design a campaign to increase customer acquisition"
+
+- tapOn:
+    text: "Send"
+    label: "Send to Marketing Agent"
+
+- waitFor:
+    text: "campaign"
+    timeout: 45000
+
+- assertVisible:
+    text: "acquisition"
+    regex: true
+
+---
+# Workflow Step 7: Task Execution
+- tapOn:
+    text: "Explore"
+    label: "Navigate to tasks"
+
+- tapOn:
+    text: "Revenue Growth Alert"
+    label: "Open revenue task"
+
+- tapOn:
+    text: "Start Task"
+    label: "Execute task"
+
+# Wait for task to process with agent coordination
+- waitFor:
+    text: "Running"
+    timeout: 15000
+
+# Monitor progress
+- waitFor:
+    text: "50%"
+    regex: true
+    timeout: 30000
+
+- waitFor:
+    text: "Completed"
+    timeout: 60000
+
+---
+# Workflow Step 8: Review Results
+- scrollUntilVisible:
+    element:
+      text: "Results"
+    direction: DOWN
+    timeout: 5000
+
+# Assert comprehensive results
+- assertVisible:
+    text: "Action Plan"
+    regex: true
+
+- assertVisible:
+    text: "Marketing Campaign"
+    regex: true
+
+- assertVisible:
+    text: "ROI Projections"
+    regex: true
+
+---
+# Workflow Step 9: DevOps System Optimization
+- tapOn:
+    text: "Close"
+    label: "Close task"
+
+- tapOn:
+    text: "Chat"
+    label: "Back to chat"
+
+- tapOn:
+    text: "System Health"
+    label: "Check system health"
+
+- waitFor:
+    text: "DevOps"
+    timeout: 5000
+
+- waitFor:
+    text: "system health"
+    timeout: 45000
+
+---
+# Workflow Step 10: Performance Metrics Validation
+- tapOn:
+    text: "Performance Metrics"
+    label: "Check performance metrics"
+
+- waitFor:
+    text: "CEO"
+    timeout: 5000
+
+- waitFor:
+    text: "KPI"
+    regex: true
+    timeout: 45000
+
+---
+# Workflow Step 11: Update Morning Briefing
+- tapOn:
+    text: "Dashboard"
+    label: "Back to dashboard"
+
+- tapOn:
+    text: "Update Briefing"
+    label: "Update with new data"
+
+- waitFor:
+    text: "Briefing updated"
+    timeout: 30000
+
+# Assert updated content
+- scrollUntilVisible:
+    element:
+      text: "Action Plan Implemented"
+    direction: DOWN
+    timeout: 5000
+
+---
+# Workflow Step 12: Final Status Check
+- tapOn:
+    text: "Chat"
+    label: "Final status check"
+
+- tapOn:
+    id: "chat-input"
+    label: "Final status input"
+
+- inputText: "Provide final status update on all coordinated activities and next steps"
+
+- tapOn:
+    text: "Send"
+    label: "Request final status"
+
+- waitFor:
+    text: "summary"
+    timeout: 45000
+
+# Assert comprehensive summary
+- assertVisible:
+    text: "completed"
+  regex: true
+
+- assertVisible:
+    text: "next steps"
+    regex: true
+
+- takeScreenshot:
+    label: "workflow-complete"
+
+---
+# Validation: All Key Features Tested
+- runFlow:
+    file: ../../utils/helpers.yaml
+    args:
+      message: "Complete PRD Workflow Validation"
+
+# Verify all components were active
+- assertVisible:
+    testID: "agent-chat-interface"
+
+- tapOn:
+    text: "Dashboard"
+    label: "Check dashboard"
+
+- assertVisible:
+    id: "dashboard-container"
+
+- tapOn:
+    text: "Explore"
+    label: "Check task manager"
+
+- assertVisible:
+    testID: "task-manager-screen"
+
+- runFlow:
+    file: ../../utils/helpers.yaml
+    args:
+      message: "✅ Complete PRD Workflow Test Passed Successfully"

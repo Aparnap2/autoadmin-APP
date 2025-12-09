@@ -1,0 +1,395 @@
+# Multi-Agent Orchestration System Configuration
+# This file configures load balancing, failover, and health monitoring for AutoAdmin agents
+
+# Agent Configuration
+agents:
+  # CEO Agent Configuration
+  ceo:
+    model: "gpt-4"
+    temperature: 0.3
+    max_tokens: 2000
+    api_key: "${OPENAI_API_KEY}"
+    capabilities:
+      - "strategic_planning"
+      - "decision_making"
+      - "coordination"
+      - "oversight"
+      - "risk_assessment"
+      - "business_development"
+    max_concurrent_tasks: 3
+    priority: "high"
+    hot_standby_enabled: true
+    hot_standby_count: 2
+
+  # Strategy Agent (CMO/CFO) Configuration
+  strategy:
+    model: "gpt-4"
+    temperature: 0.2
+    max_tokens: 2000
+    api_key: "${OPENAI_API_KEY}"
+    tavily_api_key: "${TAVILY_API_KEY}"
+    capabilities:
+      - "market_research"
+      - "competitive_analysis"
+      - "financial_planning"
+      - "business_strategy"
+      - "investment_analysis"
+      - "growth_planning"
+    max_concurrent_tasks: 5
+    priority: "medium"
+    hot_standby_enabled: true
+    hot_standby_count: 1
+
+  # DevOps Agent (CTO) Configuration
+  devops:
+    model: "gpt-4"
+    temperature: 0.1
+    max_tokens: 2000
+    api_key: "${OPENAI_API_KEY}"
+    capabilities:
+      - "technical_architecture"
+      - "system_design"
+      - "infrastructure_planning"
+      - "security_assessment"
+      - "performance_optimization"
+      - "cicd_implementation"
+      - "monitoring_setup"
+      - "automation"
+    max_concurrent_tasks: 5
+    priority: "medium"
+    hot_standby_enabled: true
+    hot_standby_count: 1
+
+# Load Balancer Configuration
+load_balancer:
+  # Strategy for task distribution
+  strategy: "capability_based"  # Options: round_robin, least_connections, weighted_round_robin, response_time_based, capability_based
+
+  # Health monitoring settings
+  health_check_interval: 30  # seconds between health checks
+  agent_timeout: 120         # seconds before agent considered unresponsive
+
+  # Circuit breaker settings
+  circuit_breaker_threshold: 5  # consecutive failures before opening circuit
+  circuit_breaker_timeout: 60   # seconds to wait before attempting to reset circuit
+
+  # Load balancing parameters
+  max_retry_attempts: 3
+  retry_delay: 5               # seconds between retries
+
+  # Agent weights for load balancing
+  agent_weights:
+    ceo: 1.0        # CEO has highest priority
+    strategy: 0.9    # Strategy agent slightly lower
+    devops: 0.9      # DevOps agent slightly lower
+
+  # Failover routing
+  enable_failover_routing: true
+  failover_preferred_agents:
+    strategy: ["strategy_backup_1"]
+    devops: ["devops_backup_1"]
+    ceo: ["ceo_backup_1", "ceo_backup_2"]
+
+# Failover Manager Configuration
+failover:
+  # Failover strategies
+  default_strategy: "hot_standby"  # Options: hot_standby, cold_standby, active_active, graceful_degradation
+
+  # Hot standby configuration
+  hot_standby:
+    default_standby_count: 2
+    health_check_interval: 30
+    auto_activate: true
+    activation_delay: 0     # seconds to wait before activating standby
+
+  # Failure detection
+  failure_window: 300        # seconds to consider for failure counting
+  max_consecutive_failures: 3
+  recovery_timeout: 60       # seconds to wait for recovery
+
+  # Monitoring and alerts
+  monitoring_enabled: true
+  monitoring_interval: 30
+  alert_on_failure: true
+  alert_on_recovery: true
+
+  # Recovery actions
+  auto_recovery_enabled: true
+  recovery_actions:
+    - "restart_agent"
+    - "failover_to_standby"
+    - "reset_circuit_breaker"
+
+  # Policies by agent type
+  agent_policies:
+    ceo:
+      strategy: "hot_standby"
+      max_failures: 2
+      hot_standby_count: 2
+      recovery_actions:
+        - "failover_to_standby"
+        - "restart_agent"
+
+    strategy:
+      strategy: "hot_standby"
+      max_failures: 3
+      hot_standby_count: 1
+      recovery_actions:
+        - "failover_to_standby"
+
+    devops:
+      strategy: "hot_standby"
+      max_failures: 3
+      hot_standby_count: 1
+      recovery_actions:
+        - "failover_to_standby"
+
+# Health Monitor Configuration
+health_monitor:
+  # Monitoring intervals
+  check_interval: 30              # seconds between health checks
+  metrics_collection_interval: 60  # seconds between metrics collection
+  metrics_retention_hours: 24      # hours to retain metrics
+
+  # Alert thresholds
+  alert_thresholds:
+    # Response time in milliseconds
+    response_time:
+      warning: 5000
+      critical: 10000
+
+    # Success rate (0.0 - 1.0)
+    success_rate:
+      warning: 0.9
+      critical: 0.8
+
+    # Error rate (0.0 - 1.0)
+    error_rate:
+      warning: 0.1
+      critical: 0.2
+
+    # Heartbeat interval in seconds
+    heartbeat_interval:
+      warning: 60
+      critical: 120
+
+    # Resource usage (percentage)
+    resource_usage:
+      warning: 80
+      critical: 95
+
+    # Throughput (tasks per minute)
+    throughput:
+      warning: 0.5
+      critical: 0.1
+
+  # Anomaly detection
+  anomaly_detection:
+    enabled: true
+    window_size: 20           # number of data points to consider
+    threshold_multiplier: 2.0  # standard deviations threshold
+
+  # Alert management
+  alert_escalation:
+    warning_to_error: 30      # minutes before escalating warning to error
+    error_to_critical: 60     # minutes before escalating error to critical
+    max_alerts_per_agent: 10  # maximum alerts per agent before rate limiting
+
+  # Notification settings
+  notifications:
+    enabled: true
+    channels:
+      - "log"
+      - "database"
+      # Add more channels like email, slack, etc.
+    critical_only: false
+    notification_cooldown: 300  # seconds between notifications for same alert
+
+# Database Configuration
+database:
+  # PostgreSQL configuration
+  postgres:
+    enabled: true
+    host: "localhost"
+    port: 5433
+    database: "autoadmin"
+    username: "autoadmin"
+    password: "${POSTGRES_PASSWORD}"
+    connection_pool_size: 10
+    max_connections: 50
+    ssl_mode: "prefer"
+
+  # Redis configuration
+  redis:
+    enabled: true
+    host: "localhost"
+    port: 6380
+    password: "${REDIS_PASSWORD}"
+    connection_pool_size: 10
+    database_index: 0
+    ssl_enabled: false
+
+  # Connection retry settings
+  retry_attempts: 3
+  retry_delay: 5  # seconds
+  connection_timeout: 30  # seconds
+
+# API Configuration
+api:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+  timeout: 300  # seconds
+
+  # Rate limiting
+  rate_limiting:
+    enabled: true
+    requests_per_minute: 100
+    burst_size: 20
+
+  # Security
+  authentication:
+    enabled: true
+    api_key_header: "X-API-Key"
+
+  # CORS settings
+  cors:
+    enabled: true
+    origins:
+      - "http://localhost:3000"
+      - "https://autoadmin.example.com"
+    methods:
+      - "GET"
+      - "POST"
+      - "PUT"
+      - "DELETE"
+      - "OPTIONS"
+    headers:
+      - "*"
+
+# Logging Configuration
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+
+  # Log formats
+  format: "json"  # json, text
+
+  # File logging
+  file:
+    enabled: true
+    path: "/var/log/autoadmin"
+    max_size_mb: 100
+    backup_count: 10
+    rotation: "daily"
+
+  # Console logging
+  console:
+    enabled: true
+    colored: true
+
+  # Structured logging
+  structured:
+    enabled: true
+    include_timestamp: true
+    include_level: true
+    include_logger: true
+
+# Monitoring and Observability
+monitoring:
+  # Metrics collection
+  metrics:
+    enabled: true
+    collection_interval: 60  # seconds
+    export_format: "prometheus"  # prometheus, json
+
+  # Distributed tracing
+  tracing:
+    enabled: true
+    service_name: "autoadmin-multi-agent"
+    sample_rate: 0.1  # 10% of requests
+
+  # Performance profiling
+  profiling:
+    enabled: false  # Enable for debugging only
+    interval: 60  # seconds
+
+# Security Configuration
+security:
+  # API keys and secrets
+  secrets_management:
+    enabled: true
+    provider: "environment"  # environment, vault, aws_secrets
+
+  # Encryption
+  encryption:
+    enabled: true
+    algorithm: "AES-256-GCM"
+    key_rotation_days: 90
+
+  # Access control
+  access_control:
+    enabled: true
+    rbac_enabled: true
+    default_role: "viewer"
+
+# Performance Configuration
+performance:
+  # Concurrency settings
+  max_concurrent_tasks: 50
+  max_concurrent_agents: 20
+
+  # Caching
+  caching:
+    enabled: true
+    provider: "redis"  # redis, memory
+    ttl_seconds: 3600
+
+  # Connection pooling
+  connection_pooling:
+    enabled: true
+    max_connections_per_agent: 10
+    connection_timeout: 30
+    idle_timeout: 300
+
+# Environment-specific configurations
+environments:
+  development:
+    logging:
+      level: "DEBUG"
+    api:
+      port: 8001
+    agents:
+      ceo:
+        model: "gpt-3.5-turbo"
+      strategy:
+        model: "gpt-3.5-turbo"
+      devops:
+        model: "gpt-3.5-turbo"
+
+  staging:
+    logging:
+      level: "INFO"
+    api:
+      port: 8002
+    monitoring:
+      metrics:
+        collection_interval: 120
+
+  production:
+    logging:
+      level: "WARNING"
+    api:
+      port: 8000
+      workers: 8
+    database:
+      postgres:
+        connection_pool_size: 20
+        max_connections: 100
+    monitoring:
+      metrics:
+        collection_interval: 30
+    security:
+      encryption:
+        enabled: true
+      access_control:
+        rbac_enabled: true

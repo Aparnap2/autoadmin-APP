@@ -1,0 +1,33 @@
+# AutoAdmin Test Runner - Execute All PRD Tests
+appId: com.autoadmin.app
+
+# This is the main test runner that executes all PRD functionality tests
+
+# Run all test suites in sequence
+- runFlow:
+    file: flows/agent-chat/ceo-agent-chat.yaml
+
+- runFlow:
+    file: flows/agent-chat/multi-agent-coordination.yaml
+
+- runFlow:
+    file: flows/business-intelligence/morning-briefing.yaml
+
+- runFlow:
+    file: flows/business-intelligence/revenue-intelligence.yaml
+
+- runFlow:
+    file: flows/task-delegation/task-creation.yaml
+
+- runFlow:
+    file: flows/task-delegation/task-execution.yaml
+
+- runFlow:
+    file: flows/integration/complete-workflow.yaml
+
+# Final validation
+- takeScreenshot:
+    label: "all-tests-completed"
+
+- assertVisible:
+    text: "Dashboard"  # Verify app is still responsive

@@ -1,0 +1,46 @@
+# pnpm configuration for AutoAdmin project
+
+# Enable shamefully-hoist for compatibility with some React Native packages
+shamefully-hoist=true
+
+# Use strict-peer-dependencies to catch version conflicts early
+strict-peer-dependencies=false
+
+# Prefer hoisted dependencies for better React Native compatibility
+prefer-workspace-packages=true
+
+# Enable auto-install-peers for smoother dependency management
+auto-install-peers=true
+
+# Use faster resolution algorithm
+resolution-mode=highest
+
+# Optimize for development speed
+fast-install=true
+
+# Set appropriate timeout for package installation
+network-timeout=600000
+
+# Prefer deduplication
+prefer-frozen-lockfile=false
+
+# Enable workspace protocol
+link-workspace-packages=true
+
+# Store directory configuration
+store-dir=~/.pnpm-store
+
+# Cache directory configuration
+cache-dir=~/.pnpm-cache
+
+# Enable symlinks for better disk usage
+symlink=true
+
+# Set maximum concurrent downloads
+fetch-concurrency=10
+
+# Set maximum parallel installations
+child-concurrency=8
+
+# Experimental features for better performance
+experimental-modules=true

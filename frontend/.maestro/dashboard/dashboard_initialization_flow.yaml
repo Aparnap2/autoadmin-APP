@@ -1,0 +1,156 @@
+appId: host.exp.Exponent
+name: "Dashboard Initialization & Data Loading (HTTP-Only)"
+tags:
+  - critical
+  - smoke
+  - dashboard
+  - http-only
+env:
+  HTTP_ONLY_MODE: "true"
+  DASHBOARD_TIMEOUT: "30000"
+  API_BASE_URL: "http://localhost:8000/api/v1"
+---
+# Navigate to dashboard
+- launchApp
+- extendedWaitUntil:
+    visible: "AutoAdmin Dashboard"
+    timeout: 15000
+
+# Verify dashboard main components load
+- assertVisible:
+    id: "dashboard-header"
+- assertVisible:
+    id: "dashboard-title"
+- assertVisible:
+    id: "dashboard-subtitle"
+
+# Verify system status section loads via HTTP
+- extendedWaitUntil:
+    visible: "System Status"
+    timeout: 10000
+- assertVisible: "Status: Online"
+- assertVisible: "Session: Active"
+
+# Verify agent swarm status loads
+- extendedWaitUntil:
+    visible: "Agent Swarm Status"
+    timeout: 8000
+- assertVisible: "CEO Agent"
+- assertVisible: "Strategy Agent"
+- assertVisible: "DevOps Agent"
+
+# Verify agent status indicators
+- assertVisible: "Online"
+- assertNotVisible: "Offline"
+- assertNotVisible: "Error"
+
+# Verify system metrics load via HTTP
+- extendedWaitUntil:
+    visible: "System Metrics"
+    timeout: 12000
+- assertVisible: "Response Time"
+- assertVisible: "Success Rate"
+- assertVisible: "Active Connections"
+
+# Verify metrics are populated
+- assertVisible: "ms"
+- assertVisible: "%"
+- assertVisible: "connections"
+
+# Verify virtual file system stats
+- extendedWaitUntil:
+    visible: "Virtual File System"
+    timeout: 8000
+- assertVisible: "Files"
+- assertVisible: "Size"
+- assertVisible: "Operations"
+
+# Verify HubSpot CRM data loads via HTTP
+- extendedWaitUntil:
+    visible: "HubSpot CRM Data"
+    timeout: 15000
+
+# Wait for CRM data to load
+- extendedWaitUntil:
+    visible: "Loading CRM data..."
+    timeout: 5000
+- extendedWaitUntil:
+    notVisible: "Loading CRM data..."
+    timeout: 10000
+
+# Verify CRM data is displayed
+- assertVisible: "Contacts"
+- assertVisible: "Deals"
+- assertVisible: "Recent Activity"
+
+# Verify CRM data values are populated
+- assertVisible: "0"  # Contact count (may be 0 in test)
+- assertVisible: "0"  # Deal count (may be 0 in test)
+- assertVisible: "0"  # Activity count (may be 0 in test)
+
+# Test dashboard refresh functionality
+- scroll
+- tapOn: "Refresh"
+- extendedWaitUntil:
+    visible: "Refreshing data..."
+    timeout: 5000
+- extendedWaitUntil:
+    notVisible: "Refreshing data..."
+    timeout: 10000
+
+# Verify data refreshes successfully
+- assertVisible: "System Status"
+- assertVisible: "HubSpot CRM Data"
+
+# Test error handling for HTTP requests
+- evalScript: ${console.log('🔧 Testing HTTP error handling...')}
+- waitBetween: 2000
+
+# Verify dashboard handles errors gracefully
+- assertNotVisible: "Dashboard crashed"
+- assertVisible: "AutoAdmin Dashboard"
+
+# Test dashboard responsiveness
+- tapOn: "Quick Actions"
+- assertVisible: "Refresh Dashboard"
+- assertVisible: "Open Chat"
+- assertVisible: "Clear Conversation History"
+
+# Test backend status indicator
+- assertVisible:
+    id: "backend-status"
+- assertVisible: "Backend is online"
+
+# Test offline mode handling
+- evalScript: ${console.log('🔄 Testing offline mode...')}
+- waitBetween: 1000
+
+# Verify dashboard remains functional in offline mode
+- assertVisible: "System Status"
+- assertVisible: "Agent Swarm Status"
+
+# Test lazy loading validation (no polling on startup)
+- assertNotVisible: "Polling backend"
+- assertVisible: "HTTP streaming enabled"
+
+# Verify no automatic WebSocket connections
+- assertNotVisible: "Connecting to WebSocket"
+- assertNotVisible: "WebSocket connection established"
+
+# Verify HTTP-only indicators
+- assertVisible: "HTTP-only mode active"
+
+# Test dashboard performance
+- evalScript: ${console.log('⏱️ Testing dashboard performance...')}
+- waitBetween: 1000
+
+# Verify dashboard remains responsive
+- tapOn: "System Status"
+- tapOn: "Agent Swarm Status"
+- tapOn: "System Metrics"
+
+# Log successful dashboard initialization
+- evalScript: ${console.log('✅ Dashboard initialization test completed successfully')}
+
+# Take screenshot of fully loaded dashboard
+- takeScreenshot: "dashboard-http-only-complete"

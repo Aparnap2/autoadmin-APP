@@ -1,0 +1,97 @@
+# Maestro Flow: Business Intelligence Dashboard Testing
+# Tests HTTP-based BI data fetching and real-time updates
+
+appId: host.exp.Exponent
+
+tags:
+  - critical
+  - business-intelligence
+  - http-communication
+  - real-time
+
+---
+# 1. Navigate to Business Intelligence Dashboard
+- launchApp
+- tapOn:
+    id: "dashboard-tab"
+- assertVisible: "Business Intelligence"
+
+# 2. Test morning briefing HTTP fetching (lazy loading)
+- tapOn:
+    id: "morning-briefing"
+- assertVisible: "Loading briefing..."
+- waitFor:
+    text: "Morning Briefing"
+    timeout: 15000
+
+# 3. Verify briefing content
+- assertVisible: "Executive Summary"
+- assertVisible: "Key Metrics"
+- assertVisible: "Action Items"
+
+# 4. Test real-time data streaming via SSE
+- assertVisible:
+    text: "Live"
+    id: "data-status"
+- tapOn:
+    id: "refresh-metrics"
+- waitFor:
+    text: "Updated"
+    timeout: 5000
+
+# 5. Test revenue intelligence
+- tapOn: "Revenue Intelligence"
+- assertVisible: "Loading revenue data..."
+- waitFor:
+    text: "Revenue Analysis"
+    timeout: 10000
+
+# 6. Verify revenue metrics
+- assertVisible: "$"
+- assertVisible: "Growth Rate"
+- assertVisible: "Forecast"
+
+# 7. Test competitive analysis
+- tapOn: "Competitive Analysis"
+- assertVisible: "Analyzing competitors..."
+- waitFor:
+    text: "Competitor Insights"
+    timeout: 20000
+
+# 8. Verify competitive data
+- assertVisible: "Market Position"
+- assertVisible: "Competitor Landscape"
+- assertVisible: "SWOT Analysis"
+
+# 9. Test HTTP-only data fetching (no polling)
+- assertNotVisible:
+    text: "Polling"
+    id: "data-update-mode"
+- assertVisible:
+    text: "Event-driven"
+    id: "update-mechanism"
+
+# 10. Test real-time alerts
+- tapOn:
+    id: "simulate-alert"
+- assertVisible: "New Alert"
+- assertVisible: "Critical metric change"
+- tapOn:
+    id: "dismiss-alert"
+
+# 11. Performance validation
+- assertVisible:
+    text: "< 3s"
+    id: "data-load-time"
+- assertVisible:
+    text: "Live"
+    id: "streaming-status"
+
+# 12. Test error handling
+- tapOn:
+    id: "simulate-network-error"
+- assertVisible: "Connection error"
+- assertVisible: "Retrying..."
+- waitFor:
+    text: "Connected"
+    timeout: 10000

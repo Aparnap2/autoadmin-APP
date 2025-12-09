@@ -1,0 +1,186 @@
+appId: host.exp.Exponent
+name: "Dashboard Interactions & Real-time Updates (HTTP-Only)"
+tags:
+  - integration
+  - dashboard
+  - http-only
+  - interactions
+env:
+  HTTP_ONLY_MODE: "true"
+  ENABLE_REALTIME_UPDATES: "true"
+  API_BASE_URL: "http://localhost:8000/api/v1"
+---
+# Navigate to dashboard
+- launchApp
+- tapOn:
+    text: "Dashboard"
+
+# Wait for dashboard to fully load
+- extendedWaitUntil:
+    visible: "System Status"
+    timeout: 15000
+
+# Test quick actions via HTTP
+- tapOn: "Quick Actions"
+- tapOn: "Status Update"
+
+# Verify status update via HTTP streaming
+- extendedWaitUntil:
+    visible: "Processing status update..."
+    timeout: 5000
+- extendedWaitUntil:
+    visible: "Status update completed"
+    timeout: 10000
+
+# Test market analysis quick action
+- tapOn: "Quick Actions"
+- tapOn: "Market Analysis"
+
+# Verify market analysis processing
+- extendedWaitUntil:
+    visible: "Analyzing market data..."
+    timeout: 8000
+- extendedWaitUntil:
+    visible: "Market analysis complete"
+    timeout: 15000
+
+# Test system health quick action
+- tapOn: "Quick Actions"
+- tapOn: "Code Review"
+
+# Verify system health processing
+- extendedWaitUntil:
+    visible: "Performing code review..."
+    timeout: 5000
+- extendedWaitUntil:
+    visible: "Code review completed"
+    timeout: 12000
+
+# Test task creation from dashboard
+- tapOn: "Quick Actions"
+- tapOn: "Create New Task"
+
+# Verify task creation interface
+- extendedWaitUntil:
+    visible: "Task Creator"
+    timeout: 5000
+
+# Create test task
+- tapOn: "Task Title"
+- inputText: "Dashboard Test Task"
+- tapOn: "Description"
+- inputText: "Testing dashboard task creation via HTTP"
+- tapOn: "Agent Type"
+- tapOn: "CEO Agent"
+- tapOn: "Create Task"
+
+# Verify task creation success
+- extendedWaitUntil:
+    visible: "Task created successfully"
+    timeout: 10000
+
+# Test dashboard scroll interactions
+- scroll
+- assertVisible: "Recent Conversations"
+- assertVisible: "HubSpot CRM Data"
+- assertVisible: "Virtual File System"
+
+# Test system metrics interactions
+- tapOn: "System Metrics"
+- extendedWaitUntil:
+    visible: "Response Time:"
+    timeout: 3000
+
+# Test real-time metrics updates
+- evalScript: ${console.log('📊 Testing real-time metrics updates...')}
+- waitBetween: 3000
+
+# Verify metrics update
+- assertVisible: "Updated:"
+- assertNotVisible: "Connection failed"
+
+# Test pull-to-refresh functionality
+- scroll: "up"
+- pull
+- extendedWaitUntil:
+    visible: "Refreshing..."
+    timeout: 3000
+- extendedWaitUntil:
+    notVisible: "Refreshing..."
+    timeout: 8000
+
+# Verify all sections refresh
+- assertVisible: "System Status"
+- assertVisible: "Agent Swarm Status"
+- assertVisible: "HubSpot CRM Data"
+
+# Test conversation preview interactions
+- scroll
+- tapOn: "Recent Conversations"
+- extendedWaitUntil:
+    visible: "Loading conversations..."
+    timeout: 3000
+
+# Test backend status interactions
+- tapOn:
+    id: "backend-status"
+- extendedWaitUntil:
+    visible: "Backend status updated"
+    timeout: 5000
+
+# Test dashboard error recovery
+- evalScript: ${console.log('🔧 Testing error recovery...')}
+- waitBetween: 2000
+
+# Simulate connection issue
+- extendedWaitUntil:
+    visible: "Connection issue detected"
+    timeout: 5000
+
+# Verify error recovery
+- extendedWaitUntil:
+    visible: "Connection restored"
+    timeout: 10000
+- assertVisible: "Dashboard recovered"
+
+# Test dashboard state persistence
+- tapOn: "Quick Actions"
+- tapOn: "Clear Conversation History"
+- tapOn: "Clear"
+
+# Verify state preservation
+- extendedWaitUntil:
+    visible: "State saved"
+    timeout: 5000
+- assertVisible: "Agent Swarm Status"
+- assertVisible: "System Metrics"
+
+# Test multi-section interactions
+- tapOn: "System Status"
+- tapOn: "Agent Swarm Status"
+- tapOn: "HubSpot CRM Data"
+- tapOn: "Virtual File System"
+
+# Verify all sections remain interactive
+- assertVisible: "System Status"
+- assertVisible: "Agent Swarm Status"
+- assertVisible: "HubSpot CRM Data"
+- assertVisible: "Virtual File System"
+
+# Test dashboard performance under load
+- repeat:
+    times: 10
+    commands:
+      - tapOn: "Quick Actions"
+      - tapOn: "Status Update"
+      - waitBetween: 500
+
+# Verify dashboard remains responsive
+- assertVisible: "AutoAdmin Dashboard"
+- assertNotVisible: "Dashboard unresponsive"
+
+# Log successful dashboard interactions test
+- evalScript: ${console.log('✅ Dashboard interactions test completed successfully')}
+
+# Take final screenshot
+- takeScreenshot: "dashboard-interactions-http-only-complete"

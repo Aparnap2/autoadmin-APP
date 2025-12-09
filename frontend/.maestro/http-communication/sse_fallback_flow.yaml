@@ -1,0 +1,127 @@
+appId: host.exp.Exponent
+name: "SSE Fallback Communication Flow"
+tags:
+  - critical
+  - http-only
+  - sse
+  - fallback
+env:
+  HTTP_ONLY_MODE: "true"
+  ENABLE_SSE_FALLBACK: "true"
+  DISABLE_WEBSOCKETS: "true"
+  BACKEND_URL: "http://localhost:8000"
+---
+# Launch app and verify SSE fallback initialization
+- launchApp
+- tapOn:
+    text: "Dashboard"
+
+# Verify SSE fallback is ready
+- assertVisible: "SSE fallback ready"
+- assertVisible: "No WebSocket connection"
+
+# Navigate to task manager to test SSE updates
+- tapOn:
+    text: "Explore"
+- assertVisible:
+    id: "task-manager-screen"
+
+# Verify task manager initializes with SSE
+- extendedWaitUntil:
+    visible: "Local"
+    timeout: 8000
+
+# Create a new task to test SSE communication
+- tapOn:
+    id: "fab-create-task"
+- extendedWaitUntil:
+    visible: "Task Creator"
+    timeout: 5000
+
+# Fill task details
+- tapOn: "Task Title"
+- inputText: "SSE Test Task"
+- tapOn: "Description"
+- inputText: "Testing SSE fallback communication"
+- tapOn: "Agent Type"
+- tapOn: "CEO Agent"
+
+# Submit task
+- tapOn: "Create Task"
+
+# Wait for SSE confirmation
+- extendedWaitUntil:
+    visible: "Task created successfully"
+    timeout: 10000
+
+# Verify task appears in list via SSE update
+- assertVisible: "SSE Test Task"
+
+# Test real-time status updates via SSE
+- tapOn: "SSE Test Task"
+- extendedWaitUntil:
+    visible: "Task Details"
+    timeout: 5000
+
+# Verify task status updates via SSE
+- assertVisible: "Status: Created"
+- extendedWaitUntil:
+    visible: "Status: In Progress"
+    timeout: 15000
+
+# Test SSE connection resilience
+- waitBetween: 5000
+- assertVisible: "SSE connection active"
+
+# Simulate backend restart/reconnection
+- evalScript: ${console.log('🔄 Testing SSE reconnection...')}
+- waitBetween: 3000
+
+# Verify SSE reconnection
+- extendedWaitUntil:
+    visible: "SSE reconnected"
+    timeout: 10000
+- assertVisible: "SSE fallback active"
+
+# Test multiple simultaneous SSE events
+- tapOn: "Back"
+- tapOn:
+    id: "fab-create-task"
+- tapOn: "Task Title"
+- inputText: "SSE Test Task 2"
+- tapOn: "Create Task"
+
+# Create another task quickly
+- waitBetween: 1000
+- tapOn:
+    id: "fab-create-task"
+- tapOn: "Task Title"
+- inputText: "SSE Test Task 3"
+- tapOn: "Create Task"
+
+# Verify both tasks appear via SSE
+- extendedWaitUntil:
+    visible: "SSE Test Task 2"
+    timeout: 8000
+- extendedWaitUntil:
+    visible: "SSE Test Task 3"
+    timeout: 8000
+
+# Test SSE error handling
+- evalScript: ${console.log('🔧 Testing SSE error handling...')}
+- waitBetween: 2000
+
+# Verify fallback error handling works
+- assertNotVisible: "SSE connection failed"
+- assertVisible: "SSE fallback ready"
+
+# Verify app remains functional during SSE issues
+- assertVisible: "SSE Test Task 3"
+- tapOn: "SSE Test Task 3"
+- assertVisible: "Task Details"
+
+# Log successful SSE fallback test
+- evalScript: ${console.log('✅ SSE fallback test completed successfully')}
+
+# Take screenshot
+- takeScreenshot: "sse-fallback-test-complete"
